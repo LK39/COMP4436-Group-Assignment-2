@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLO Webcam Prediction</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #111;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #video-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #00aaff;
+            margin-bottom: 10px;
+        }
+
+        img {
+            width: 80%;
+            max-width: 600px;
+            border: 2px solid #00aaff;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 170, 255, 0.5);
+        }
+
+        h2 {
+            color: #00aaff;
+            margin: 15px 0;
+        }
+
+        table {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 80%;
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(0, 170, 255, 0.5);
+        }
+
+        th, td {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #0a4d7d;
+            color: #ffffff;
+            font-style: italic;
+        }
+
+        td {
+            background-color: #1c1c1c;
+            color: #00aaff;
+        }
+
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        @media (max-width: 600px) {
+            img {
+                width: 100%;
+            }
+            table {
+                width: 100%;
+            }
+        }
+
+        .error {
+            color: red;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="video-container">
+        <h1>Webcam Feed with YOLO Predictions</h1>
+        <img src="{{ url_for('video_feed') }}" alt="Webcam Feed" />
+        <h2>Predictions Log</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Class</th>
+                    <th>Confidence</th>
+                </tr>
+            </thead>
+            <tbody id="predictions-table-body">
+                <!-- Predictions-->
+            </tbody>
+        </table>
+        <div id="error-message" class="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Fetch predictions from the server
+        function fetchPredictions() {
+            fetch('/predictions')
+                .then(response => {
+                    // Check if the response is okay (status 200)
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const tbody = document.getElementById('predictions-table-body');
+                    tbody.innerHTML = ''; // Clear previous data
+                    const errorMessageDiv = document.getElementById('error-message');
+                    errorMessageDiv.style.display = 'none'; // Hide error message
+
+                    if (data.length === 0) {
+                        // If no predictions, show a message on UI
+                        errorMessageDiv.textContent = 'No predictions available.';
+                        errorMessageDiv.style.display = 'block';
+                    } else {
+                        // Populate the predictions table
+                        data.forEach(prediction => {
+                            const row = tbody.insertRow();
+                            const classCell = row.insertCell(0);
+                            const confCell = row.insertCell(1);
+                            classCell.textContent = prediction.class_name;           // Class name
+                            confCell.textContent = prediction.confidence.toFixed(2); // Confidence, formatted to 2 decimals
+                        });
+                    }
+                })
+            }
