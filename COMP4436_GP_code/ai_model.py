@@ -21,7 +21,8 @@ def on_message(client, userdata, msg):
         print(f"  Humi: {data['humidity']}%")
         print(f"  Sound: {data['sound']}")
         print(f"  Light: {data['light']}")
-
+        results="light on" if data['light'] <3000 else "light off"
+            
         client.publish(publish_channel, results, qos=1)
         print(f"Trigger published: {results}\nchannels: {publish_channel}")
         

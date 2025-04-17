@@ -11,6 +11,7 @@ import json
 YOUR_USERNAME="hyuvuhjb"
 YOUR_PASSWORD="Qweasd12"
 YOUR_CLUSTER_URL="dd28cecf47f84578948ef8d895d0d2cb.s1.eu.hivemq.cloud"
+# write_api_key = 'YOUR_WRITE_API_KEY' channel_id = 'YOUR_CHANNEL_ID'
 write_api_key = 'GTDM3TTFE1THM92Z'
 channel_id = '2920657'
 
@@ -44,8 +45,8 @@ client.username_pw_set(YOUR_USERNAME, YOUR_PASSWORD)
 # connect to HiveMQ Cloud on port 8883 (default for MQTT)
 client.connect(YOUR_CLUSTER_URL, 8883)
 #qos=min(pub_qos,sub_qos)
-client.subscribe("COMP4436/home/RPI4/#", qos=1)
-
+client.subscribe("COMP4436/home/#", qos=1)
+client.on_message = on_message
 client.loop_start()
 
 while True:

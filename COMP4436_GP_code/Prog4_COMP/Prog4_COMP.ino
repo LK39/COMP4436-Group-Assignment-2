@@ -51,8 +51,6 @@ void connectToMQTTBroker(){
             M5.Lcd.println("connected!");
             Serial.println("Connected to MQTT broker");
             client.subscribe(mqtt_topic);
-            // Publish message upon successful connection
-            client.publish(mqtt_topic, "Hi EMQX I'm ESP8266 ^^");
         } else {
             M5.Lcd.fillScreen(RED); //clear the display
             M5.Lcd.setTextColor(BLACK);
