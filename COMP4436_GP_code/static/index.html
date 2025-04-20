@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home Intelligence Center</title>
+    <style>
+        :root {
+            --dark-bg: #1e1e1e;
+            --panel-bg: #2d2d2d;
+            --accent-color: #0078d7;
+            --text-color: #e0e0e0;
+            --success-color: #00cc00;
+            --warning-color: #ff5555;
+            --humidity-color: #55FFFF;
+            --light-color: #FFFF55;
+            --temp-color: #FF5555;
+            --border-radius: 6px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            grid-gap: 20px;
+            height: calc(100vh - 100px);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px 0;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+        }
+
+        .status-indicator {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .disconnected {
+            background-color: var(--warning-color);
+        }
+
+        .connected {
+            background-color: var(--success-color);
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .system-control {
+            margin-bottom: 10px;
+        }
+
+        .power-button {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-power {
+            background-color: #333;
+            color: white;
+            width: 120px;
+        }
+
+        .btn-power.on {
+            background-color: var(--accent-color);
+        }
+
+        .power-status {
+            margin-left: 15px;
+            font-weight: bold;
+        }
+
+        .status-off {
+            color: var(--warning-color);
+        }
+
+        .status-on {
+            color: var(--success-color);
+        }
+
+        .divider {
+            height: 1px;
+            background-color: rgba(255, 255, 255, 0.1);
+            margin: 15px 0;
+        }
+
+        .control-row {
+            margin-bottom: 20px;
+        }
+
+        .control-row label {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .control-row select {
+            padding: 8px;
+            border-radius: 4px;
+            background-color: #333;
+            color: white;
+            border: 1px solid #555;
+        }
+
+        .slider-container {
+            margin-bottom: 15px;
+        }
+
+        .slider-label {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .slider-control {
+            display: flex;
+            align-items: center;
+        }
+
+        .slider {
+            flex-grow: 1;
+            height: 5px;
+            background: #555;
+            outline: none;
+            -webkit-appearance: none;
+            margin-right: 10px;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .slider-value {
+            background-color: #222;
+            color: #00FF00;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-secondary {
+            background-color: #555;
+            color: white;
+            flex: 1;
+        }
+
+        .system-status {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .timestamp {
+            font-family: 'Consolas', monospace;
+            color: #aaa;
+        }
+
+        .log-container {
+            flex-grow: 1;
+            background-color: #222;
+            border-radius: 4px;
+            padding: 10px;
+            overflow-y: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+        }
+
+        .log-timestamp {
+            color: #aaa;
+        }
+
+        .log-alert {
+            color: var(--warning-color);
+        }
+
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .prediction-results {
+            flex-grow: 1;
+        }
+
+        .time-info {
+            margin-bottom: 20px;
+        }
+
+        .time-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .time-label {
+            font-weight: bold;
+        }
+
+        .time-value {
+            font-family: 'Consolas', monospace;
+        }
+
+        .prediction-values {
+            margin: 20px 0;
+        }
+
+        .prediction-title {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .prediction-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .prediction-icon {
+            font-size: 24px;
+            margin-right: 15px;
+            width: 40px;
+            text-align: center;
+        }
+
+        .prediction-label {
+            font-size: 16px;
+            width: 120px;
+        }
+
+        .prediction-unit {
+            margin-left: auto;
+            margin-right: 10px;
+        }
+
+        .prediction-value {
+            background-color: #222;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            font-size: 24px;
+            font-weight: bold;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .temp-value {
+            color: var(--temp-color);
+        }
+
+        .humidity-value {
+            color: var(--humidity-color);
+        }
+
+        .light-value {
+            color: var(--light-color);
+        }
+
+        .device-status {
+            margin-bottom: 20px;
+        }
+
+        .device-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .device-icon {
+            font-size: 18px;
+            margin-right: 15px;
+            width: 25px;
+            text-align: center;
+        }
+
+        .device-label {
+            font-size: 14px;
+            flex-grow: 1;
+        }
+
+        .device-status-value {
+            font-weight: bold;
+            width: 50px;
+            text-align: right;
+        }
+
+        .status-on-text {
+            color: var(--success-color);
+        }
+
+        .charts-container {
+            display: flex;
+            flex-direction: column;
+            height: 400px;
+        }
+
+        .chart {
+            flex: 1;
+            margin-bottom: 10px;
+        }
+
+        .alert-panel {
+            padding: 15px;
+            border-radius: var(--border-radius);
+            background-color: var(--panel-bg);
+        }
+
+        .alert-text {
+            text-align: center;
+        }
+
+        .alert-success {
+            color: var(--success-color);
+        }
+
+        .alert-warning {
+            color: var(--warning-color);
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>SMART HOME INTELLIGENCE CENTER</h1>
+        <div class="connection-status">
+            <div id="connectionIndicator" class="status-indicator disconnected"></div>
+            <span id="connectionText">DISCONNECTED</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="left-column">
+            <div class="panel">
+                <div class="panel-title">System Control</div>
+                <div class="system-control">
+                    <div class="power-button">
+                        <button id="powerBtn" class="btn btn-power">POWER</button>
+                        <span id="powerStatus" class="power-status status-off">OFF</span>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="control-row">
+                        <label for="forecastDuration">Forecast Duration:</label>
+                        <select id="forecastDuration">
+                            <option value="5">5 minutes</option>
+                            <option value="10">10 minutes</option>
+                            <option value="15">15 minutes</option>
+                            <option value="20">20 minutes</option>
+                            <option value="25">25 minutes</option>
+                            <option value="30" selected>30 minutes</option>
+                            <option value="35">35 minutes</option>
+                            <option value="40">40 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="50">50 minutes</option>
+                            <option value="55">55 minutes</option>
+                            <option value="60">60 minutes</option>
+                        </select>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="control-row">
+                        <label for="forecastInterval">Forecast Interval:</label>
+                        <select id="forecastInterval">
+                            <option value="1">1 minute</option>
+                            <option value="3" selected>3 minutes</option>
+                            <option value="5">5 minutes</option>
+                            <option value="10">10 minutes</option>
+                            <option value="20">20 minutes</option>
+                            <option value="30">30 minutes</option>
+                            <option value="40">40 minutes</option>
+                            <option value="50">50 minutes</option>
+                            <option value="60">60 minutes</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">Environmental Thresholds</div>
+                
+                <div class="slider-container">
+                    <span class="slider-label">Temperature Threshold:</span>
+                    <div class="slider-control">
+                        <input type="range" min="15" max="35" value="25" step="0.1" class="slider" id="tempSlider">
+                        <div class="slider-value" id="tempValue">25.0 °C</div>
+                    </div>
+                </div>
+
+                <div class="slider-container">
+                    <span class="slider-label">Humidity Threshold:</span>
+                    <div class="slider-control">
+                        <input type="range" min="30" max="90" value="60" step="0.1" class="slider" id="humiditySlider">
+                        <div class="slider-value" id="humidityValue">60.0 %</div>
+                    </div>
+                </div>
+
+                <div class="slider-container">
+                    <span class="slider-label">Light Threshold:</span>
+                    <div class="slider-control">
+                        <input type="range" min="0" max="1000" value="500" step="0.1" class="slider" id="lightSlider">
+                        <div class="slider-value" id="lightValue">500.0 Lux</div>
+                    </div>
+                </div>
+
+                <div class="button-row">
+                    <button id="applyBtn" class="btn btn-primary">Apply Settings</button>
+                    <button id="restoreBtn" class="btn btn-secondary">Restore Defaults</button>
+                </div>
+            </div>
+
+            <div class="panel system-status">
+                <div class="panel-title">System Status</div>
+                
+                <div class="status-header">
+                    <span>Last Updated:</span>
+                    <span id="lastUpdateTime" class="timestamp">--</span>
+                </div>
+                
+                <div class="status-header">
+                    <span>Next Forecast:</span>
+                    <span id="nextForecastTime" class="timestamp">--</span>
+                </div>
+                
+                <div class="divider"></div>
+                <span>Event Log:</span>
+                <div id="logContainer" class="log-container"></div>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <div class="panel prediction-results">
+                <div class="panel-title">Prediction Results</div>
+                
+                <div class="time-info">
+                    <div class="time-row">
+                        <span class="time-label">Current Time:</span>
+                        <span id="currentTime" class="time-value">--</span>
+                    </div>
+                    <div class="time-row">
+                        <span class="time-label">Forecast Time:</span>
+                        <span id="forecastTime" class="time-value">--</span>
+                    </div>
+                    <div class="time-row">
+                        <span class="time-label">Prediction Timeframe:</span>
+                        <span id="timeframe" class="time-value">--</span>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="prediction-values">
+                    <div class="prediction-title">PREDICTED ENVIRONMENTAL VALUES</div>
+                    
+                    <div class="prediction-row">
+                        <div class="prediction-icon">🌡</div>
+                        <div class="prediction-label">Temperature</div>
+                        <div class="prediction-unit">°C</div>
+                        <div id="tempPrediction" class="prediction-value temp-value">--</div>
+                    </div>
+                    
+                    <div class="prediction-row">
+                        <div class="prediction-icon">💧</div>
+                        <div class="prediction-label">Humidity</div>
+                        <div class="prediction-unit">%</div>
+                        <div id="humidityPrediction" class="prediction-value humidity-value">--</div>
+                    </div>
+                    
+                    <div class="prediction-row">
+                        <div class="prediction-icon">💡</div>
+                        <div class="prediction-label">Light</div>
+                        <div class="prediction-unit">Lux</div>
+                        <div id="lightPrediction" class="prediction-value light-value">--</div>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div id="tempChart" class="chart"></div>
+                    <div id="humidityChart" class="chart"></div>
+                    <div id="lightChart" class="chart"></div>
+                </div>
+            </div>
+
+            <div class="panel device-status">
+                <div class="panel-title">Smart Device Status</div>
+                
+                <div class="device-row">
+                    <div class="device-icon">❄</div>
+                    <div class="device-label">Air Conditioner:</div>
+                    <div id="acStatus" class="device-status-value">OFF</div>
+                </div>
+                
+                <div class="device-row">
+                    <div class="device-icon">💡</div>
+                    <div class="device-label">Lights:</div>
+                    <div id="lightsStatus" class="device-status-value">OFF</div>
+                </div>
+                
+                <div class="device-row">
+                    <div class="device-icon">💧</div>
+                    <div class="device-label">Humidity:</div>
+                    <div id="humidityStatus" class="device-status-value">OFF</div>
+                </div>
+            </div>
+
+            <div class="alert-panel">
+                <div id="alertText" class="alert-text alert-success">All values within threshold limits</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // State management
+        const appState = {
+            system: {
+                power: false,
+                connected: false,
+                forecastMinutes: 30,
+                forecastInterval: 3,
+                lastUpdate: null,
+                nextForecast: null
+            },
+            thresholds: {
+                temperature: 25.0,
+                humidity: 60.0,
+                light: 500.0
+            },
+            predictions: {
+                temperature: null,
+                humidity: null,
+                light: null,
+                timestamps: [],
+                temperatureData: [],
+                humidityData: [],
+                lightData: []
+            },
+            devices: {
+                airConditioner: "OFF",
+                lights: "OFF",
+                moistureAbsorber: "OFF"
+            },
+            logs: [],
+            charts: {
+                temperature: null,
+                humidity: null,
+                light: null
+            }
+        };
+
+        // API URL
+        const API_URL = "http://localhost:5000";
+
+        // Dom Elements
+        const elements = {
+            connectionIndicator: document.getElementById("connectionIndicator"),
+            connectionText: document.getElementById("connectionText"),
+            powerBtn: document.getElementById("powerBtn"),
+            powerStatus: document.getElementById("powerStatus"),
+            forecastDuration: document.getElementById("forecastDuration"),
+            forecastInterval: document.getElementById("forecastInterval"),
+            tempSlider: document.getElementById("tempSlider"),
+            tempValue: document.getElementById("tempValue"),
+            humiditySlider: document.getElementById("humiditySlider"),
+            humidityValue: document.getElementById("humidityValue"),
+            lightSlider: document.getElementById("lightSlider"),
+            lightValue: document.getElementById("lightValue"),
+            applyBtn: document.getElementById("applyBtn"),
+            restoreBtn: document.getElementById("restoreBtn"),
+            lastUpdateTime: document.getElementById("lastUpdateTime"),
+            nextForecastTime: document.getElementById("nextForecastTime"),
+            logContainer: document.getElementById("logContainer"),
+            currentTime: document.getElementById("currentTime"),
+            forecastTime: document.getElementById("forecastTime"),
+            timeframe: document.getElementById("timeframe"),
+            tempPrediction: document.getElementById("tempPrediction"),
+            humidityPrediction: document.getElementById("humidityPrediction"),
+            lightPrediction: document.getElementById("lightPrediction"),
+            acStatus: document.getElementById("acStatus"),
+            lightsStatus: document.getElementById("lightsStatus"),
+            humidityStatus: document.getElementById("humidityStatus"),
+            alertText: document.getElementById("alertText"),
+            tempChart: document.getElementById("tempChart"),
+            humidityChart: document.getElementById("humidityChart"),
+            lightChart: document.getElementById("lightChart")
+        };
+
+        // Initialize charts
+        function initCharts() {
+            // Temperature chart
+            appState.charts.temperature = new Chart(
+                elements.tempChart, 
+                {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Temperature',
+                            data: [],
+                            borderColor: '#FF5555',
+                            backgroundColor: 'rgba(255, 85, 85, 0.2)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Temperature Forecast',
+                                color: 'white'
+                            },
+                            annotation: {
+                                annotations: {
+                                    threshold: {
+                                        type: 'line',
+                                        yMin: appState.thresholds.temperature,
+                                        yMax: appState.thresholds.temperature,
+                                        borderColor: 'white',
+                                        borderWidth: 1,
+                                        borderDash: [5, 5]
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: 'white'
+                                },
+                                title: {
+                                    display: true,
+                                    text: '°C',
+                                    color: 'white'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: 'white'
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+
+            // Humidity chart
+            appState.charts.humidity = new Chart(
+                elements.humidityChart, 
+                {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Humidity',
+                            data: [],
+                            borderColor: '#55FFFF',
+                            backgroundColor: 'rgba(85, 255, 255, 0.2)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Humidity Forecast',
+                                color: 'white'
+                            },
+                            annotation: {
+                                annotations: {
+                                    threshold: {
+                                        type: 'line',
+                                        yMin: appState.thresholds.humidity,
+                                        yMax: appState.thresholds.humidity,
+                                        borderColor: 'white',
+                                        borderWidth: 1,
+                                        borderDash: [5, 5]
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: 'white'
+                                },
+                                title: {
+                                    display: true,
+                                    text: '%',
+                                    color: 'white'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: 'white'
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+
+            // Light chart
+            appState.charts.light = new Chart(
+                elements.lightChart, 
+                {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Light',
+                            data: [],
+                            borderColor: '#FFFF55',
+                            backgroundColor: 'rgba(255, 255, 85, 0.2)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Light Forecast',
+                                color: 'white'
+                            },
+                            annotation: {
+                                annotations: {
+                                    threshold: {
+                                        type: 'line',
+                                        yMin: appState.thresholds.light,
+                                        yMax: appState.thresholds.light,
+                                        borderColor: 'white',
+                                        borderWidth: 1,
+                                        borderDash: [5, 5]
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: 'white'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Lux',
+                                    color: 'white'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: 'white'
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        }
+
+        // Load settings from localstorage
+        function loadSettings() {
+            try {
+                const settings = localStorage.getItem('smart_home_settings');
+                if (settings) {
+                    const parsedSettings = JSON.parse(settings);
+                    
+                    // Update thresholds
+                    if (parsedSettings.thresholds) {
+                        appState.thresholds = parsedSettings.thresholds;
+                        elements.tempSlider.value = appState.thresholds.temperature;
+                        elements.tempValue.textContent = `${appState.thresholds.temperature.toFixed(1)} °C`;
+                        
+                        elements.humiditySlider.value = appState.thresholds.humidity;
+                        elements.humidityValue.textContent = `${appState.thresholds.humidity.toFixed(1)} %`;
+                        
+                        elements.lightSlider.value = appState.thresholds.light;
+                        elements.lightValue.textContent = `${appState.thresholds.light.toFixed(1)} Lux`;
+                    }
+                    
+                    // Update forecast minutes
+                    if (parsedSettings.forecastMinutes) {
+                        appState.system.forecastMinutes = parsedSettings.forecastMinutes;
+                        elements.forecastDuration.value = appState.system.forecastMinutes;
+                    }
+                    
+                    // Update forecast interval
+                    if (parsedSettings.forecastInterval) {
+                        appState.system.forecastInterval = parsedSettings.forecastInterval;
+                        elements.forecastInterval.value = appState.system.forecastInterval;
+                    }
+                    
+                    addLogEntry("Settings loaded from storage");
+                    return true;
+                }
+            } catch (error) {
+                addLogEntry(`Error loading settings: ${error.message}`);
+            }
+            
+            return false;
+        }
+
+        // Save settings to localstorage
+        function saveSettings() {
+            try {
+                const settings = {
+                    thresholds: appState.thresholds,
+                    forecastMinutes: appState.system.forecastMinutes,
+                    forecastInterval: appState.system.forecastInterval
+                };
+                
+                localStorage.setItem('smart_home_settings', JSON.stringify(settings));
+                addLogEntry("Settings saved");
+            } catch (error) {
+                addLogEntry(`Error saving settings: ${error.message}`);
+            }
+        }
+
+        // Apply settings to backend
+        async function applySettings() {
+            if (!appState.system.connected) {
+                alert("Cannot update settings: Server unreachable");
+                return;
+            }
+            
+            try {
+                const settings = {
+                    thresholds: {
+                        Temperature: appState.thresholds.temperature,
+                        Humidity: appState.thresholds.humidity,
+                        Light: appState.thresholds.light
+                    },
+                    forecast_minutes: appState.system.forecastMinutes,
+                    forecast_interval: appState.system.forecastInterval
+                };
+                
+                const response = await fetch(`${API_URL}/settings`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(settings)
+                });
+                
+                if (response.ok) {
+                    addLogEntry("Settings applied successfully");
+                    
+                    // Update chart thresholds
+                    updateChartThresholds();
+                } else {
+                    const errorText = await response.text();
+                    alert(`Failed to update settings: ${errorText}`);
+                }
+            } catch (error) {
+                alert(`Failed to send settings: ${error.message}`);
+            }
+        }
+
+        // Restore default settings
+        function restoreDefaultSettings() {
+            // Define default values
+            appState.thresholds = {
+                temperature: 25.0,
+                humidity: 60.0,
+                light: 500.0
+            };
+            appState.system.forecastMinutes = 30;
+            appState.system.forecastInterval = 3;
+            
+            // Update UI elements
+            elements.tempSlider.value = appState.thresholds.temperature;
+            elements.tempValue.textContent = `${appState.thresholds.temperature.toFixed(1)} °C`;
+            
+            elements.humiditySlider.value = appState.thresholds.humidity;
+            elements.humidityValue.textContent = `${appState.thresholds.humidity.toFixed(1)} %`;
+            
+            elements.lightSlider.value = appState.thresholds.light;
+            elements.lightValue.textContent = `${appState.thresholds.light.toFixed(1)} Lux`;
+            
+            elements.forecastDuration.value = appState.system.forecastMinutes;
+            elements.forecastInterval.value = appState.system.forecastInterval;
+            
+            // Log and notify
+            addLogEntry("Settings restored to defaults");
+            alert("Settings have been restored to defaults");
+            
+            // Save the default settings
+            saveSettings();
+            applySettings();
+        }
+
+        // Update chart thresholds when settings change
+        function updateChartThresholds() {
+            if (appState.charts.temperature) {
+                appState.charts.temperature.options.plugins.annotation.annotations.threshold.yMin = appState.thresholds.temperature;
+                appState.charts.temperature.options.plugins.annotation.annotations.threshold.yMax = appState.thresholds.temperature;
+                appState.charts.temperature.update();
+            }
+            
+            if (appState.charts.humidity) {
+                appState.charts.humidity.options.plugins.annotation.annotations.threshold.yMin = appState.thresholds.humidity;
+                appState.charts.humidity.options.plugins.annotation.annotations.threshold.yMax = appState.thresholds.humidity;
+                appState.charts.humidity.update();
+            }
+            
+            if (appState.charts.light) {
+                appState.charts.light.options.plugins.annotation.annotations.threshold.yMin = appState.thresholds.light;
+                appState.charts.light.options.plugins.annotation.annotations.threshold.yMax = appState.thresholds.light;
+                appState.charts.light.update();
+            }
+        }
+
+        // Toggle system power
+        async function toggleSystem() {
+            const newPowerState = !appState.system.power;
+            
+            if (newPowerState) {
+                // Turning ON
+                try {
+                    const response = await fetch(`${API_URL}/system_status`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ system_on: true })
+                    });
+                    
+                    if (response.ok) {
+                        appState.system.power = true;
+                        elements.powerStatus.textContent = "ON";
+                        elements.powerStatus.className = "power-status status-on";
+                        elements.powerBtn.classList.add("on");
+                        addLogEntry("System activated");
+                        
+                        // Start monitoring
+                        startMonitoring();
+                    } else {
+                        const errorText = await response.text();
+                        alert(`Failed to turn on system: ${errorText}`);
+                    }
+                } catch (error) {
+                    alert(`Could not connect to server: ${error.message}`);
+                }
+            } else {
+                // Turning OFF
+                try {
+                    const response = await fetch(`${API_URL}/system_status`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            system_on: false,
+                            turn_off_all_appliances: true
+                        })
+                    });
+                    
+                    appState.system.power = false;
+                    elements.powerStatus.textContent = "OFF";
+                    elements.powerStatus.className = "power-status status-off";
+                    elements.powerBtn.classList.remove("on");
+                    
+                    // Update device status UI immediately
+                    elements.acStatus.textContent = "OFF";
+                    elements.acStatus.className = "device-status-value";
+                    
+                    elements.lightsStatus.textContent = "OFF";
+                    elements.lightsStatus.className = "device-status-value";
+                    
+                    elements.humidityStatus.textContent = "OFF";
+                    elements.humidityStatus.className = "device-status-value";
+                    
+                    addLogEntry("System deactivated - All appliances turned off");
+                    
+                    // Stop monitoring
+                    stopMonitoring();
+                    
+                    if (response.ok) {
+                        addLogEntry("All appliances turned off successfully");
+                    } else {
+                        const errorText = await response.text();
+                        addLogEntry(`Failed to turn off all appliances: ${errorText}`);
+                    }
+                } catch (error) {
+                    addLogEntry(`Failed to turn off appliances: ${error.message}`);
+                }
+            }
+        }
+
+        // Check connection to server
+        async function checkConnection() {
+            try {
+                const response = await fetch(`${API_URL}/status`, { timeout: 2000 });
+                
+                if (response.ok) {
+                    updateConnectionStatus(true);
+                } else {
+                    updateConnectionStatus(false, "ERROR");
+                }
+            } catch (error) {
+                updateConnectionStatus(false);
+            }
+            
+            // Schedule next check if not closing
+            setTimeout(checkConnection, 15000);
+        }
+
+        // Update connection status UI
+        function updateConnectionStatus(connected, statusText) {
+            appState.system.connected = connected;
+            
+            if (connected) {
+                elements.connectionIndicator.className = "status-indicator connected";
+                elements.connectionText.textContent = "CONNECTED";
+            } else {
+                elements.connectionIndicator.className = "status-indicator disconnected";
+                elements.connectionText.textContent = statusText || "DISCONNECTED";
+            }
+        }
+
+        // Monitoring functions
+        let monitoringInterval = null;
+
+        function startMonitoring() {
+            updateForecast();
+            
+            // Calculate interval in milliseconds
+            const intervalMs = appState.system.forecastInterval * 60 * 1000;
+            
+            // Clear any existing interval
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+            }
+            
+            // Set new interval
+            monitoringInterval = setInterval(updateForecast, intervalMs);
+            
+            // Update next forecast time
+            updateNextForecastTime();
+        }
+
+        function stopMonitoring() {
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+                monitoringInterval = null;
+            }
+            
+            // Clear next forecast time
+            elements.nextForecastTime.textContent = "--";
+        }
+
+        // Update forecast data
+        async function updateForecast() {
+            if (!appState.system.connected || !appState.system.power) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/forecast?minutes=${appState.system.forecastMinutes}`);
+                
+                if (response.ok) {
+                    const forecastData = await response.json();
+                    processForecastData(forecastData);
+                    updateLastUpdateTime();
+                    updateNextForecastTime();
+                } else {
+                    const errorText = await response.text();
+                    addLogEntry(`Failed to get forecast: ${errorText}`);
+                }
+            } catch (error) {
+                addLogEntry(`Forecast error: ${error.message}`);
+            }
+        }
+
+        // Process forecast data
+        function processForecastData(data) {
+            // Parse the forecast data
+            const timestamps = data.timestamps;
+            const temperature = data.temperature;
+            const humidity = data.humidity;
+            const light = data.light;
+            
+            // Get device status
+            const deviceStatus = data.device_status || {};
+            const statusMessages = data.status_messages || [];
+            
+            // Store data for charts
+            appState.predictions.timestamps = timestamps;
+            appState.predictions.temperatureData = temperature;
+            appState.predictions.humidityData = humidity;
+            appState.predictions.lightData = light;
+            
+            // Get the final prediction values
+            const finalIndex = temperature.length - 1;
+            appState.predictions.temperature = temperature[finalIndex];
+            appState.predictions.humidity = humidity[finalIndex];
+            appState.predictions.light = light[finalIndex];
+            
+            // Update the time displays
+            const currentTime = new Date();
+            elements.currentTime.textContent = formatDate(currentTime);
+            
+            // Convert timestamp to date object if it's a string
+            let finalTimestamp;
+            if (typeof timestamps[finalIndex] === 'string') {
+                finalTimestamp = new Date(timestamps[finalIndex]);
+            } else {
+                finalTimestamp = timestamps[finalIndex];
+            }
+            
+            elements.forecastTime.textContent = formatDate(finalTimestamp);
+            elements.timeframe.textContent = `${appState.system.forecastMinutes} minutes`;
+            
+            // Update prediction values
+            elements.tempPrediction.textContent = appState.predictions.temperature.toFixed(1);
+            elements.humidityPrediction.textContent = appState.predictions.humidity.toFixed(1);
+            elements.lightPrediction.textContent = appState.predictions.light.toFixed(1);
+            
+            // Update device status
+            updateDeviceStatus(deviceStatus);
+            
+            // Log status messages
+            for (const msg of statusMessages) {
+                addLogEntry(msg);
+            }
+            
+            // Check threshold status and update alert
+            const alerts = [];
+            if (appState.predictions.temperature > appState.thresholds.temperature) {
+                alerts.push(`Temperature (${appState.predictions.temperature.toFixed(1)}°C) exceeds threshold`);
+            }
+            if (appState.predictions.humidity > appState.thresholds.humidity) {
+                alerts.push(`Humidity (${appState.predictions.humidity.toFixed(1)}%) exceeds threshold`);
+            }
+            if (appState.predictions.light > appState.thresholds.light) {
+                alerts.push(`Light (${appState.predictions.light.toFixed(1)} Lux) exceeds threshold`);
+            }
+            
+            if (alerts.length > 0) {
+                const alertText = alerts.join("\n");
+                elements.alertText.textContent = alertText;
+                elements.alertText.className = "alert-text alert-warning";
+                addLogEntry(`Alert: ${alerts.join(", ")}`, true);
+            } else {
+                elements.alertText.textContent = "All values within threshold limits";
+                elements.alertText.className = "alert-text alert-success";
+            }
+            
+            // Update charts
+            updateCharts();
+            
+            addLogEntry("Forecast updated successfully");
+        }
+
+        // Update device status displays
+        function updateDeviceStatus(deviceStatus) {
+            // Air conditioner status
+            const acStatus = deviceStatus.air_conditioner || "OFF";
+            appState.devices.airConditioner = acStatus;
+            elements.acStatus.textContent = acStatus;
+            
+            if (acStatus === "ON") {
+                elements.acStatus.className = "device-status-value status-on-text";
+            } else {
+                elements.acStatus.className = "device-status-value";
+            }
+            
+            // Lights status
+            const lightsStatus = deviceStatus.lights || "OFF";
+            appState.devices.lights = lightsStatus;
+            elements.lightsStatus.textContent = lightsStatus;
+            
+            if (lightsStatus === "ON") {
+                elements.lightsStatus.className = "device-status-value status-on-text";
+            } else {
+                elements.lightsStatus.className = "device-status-value";
+            }
+            
+            // Moisture absorber status
+            const moistureStatus = deviceStatus.moisture_absorber || "OFF";
+            appState.devices.moistureAbsorber = moistureStatus;
+            elements.humidityStatus.textContent = moistureStatus;
+            
+            if (moistureStatus === "ON") {
+                elements.humidityStatus.className = "device-status-value status-on-text";
+            } else {
+                elements.humidityStatus.className = "device-status-value";
+            }
+        }
+
+        // Update charts with new data
+        function updateCharts() {
+            // Format timestamps for display
+            const formattedLabels = appState.predictions.timestamps.map(ts => {
+                if (typeof ts === 'string') {
+                    return new Date(ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                } else {
+                    return ts.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }
+            });
+            
+            // Update temperature chart
+            appState.charts.temperature.data.labels = formattedLabels;
+            appState.charts.temperature.data.datasets[0].data = appState.predictions.temperatureData;
+            appState.charts.temperature.update();
+            
+            // Update humidity chart
+            appState.charts.humidity.data.labels = formattedLabels;
+            appState.charts.humidity.data.datasets[0].data = appState.predictions.humidityData;
+            appState.charts.humidity.update();
+            
+            // Update light chart
+            appState.charts.light.data.labels = formattedLabels;
+            appState.charts.light.data.datasets[0].data = appState.predictions.lightData;
+            appState.charts.light.update();
+        }
+
+        // Update last update time
+        function updateLastUpdateTime() {
+            const currentTime = new Date();
+            appState.system.lastUpdate = currentTime;
+            elements.lastUpdateTime.textContent = formatDate(currentTime);
+        }
+
+        // Update next forecast time
+        function updateNextForecastTime() {
+            if (appState.system.power) {
+                const nextForecast = new Date();
+                nextForecast.setMinutes(nextForecast.getMinutes() + appState.system.forecastInterval);
+                appState.system.nextForecast = nextForecast;
+                elements.nextForecastTime.textContent = formatTime(nextForecast);
+            } else {
+                elements.nextForecastTime.textContent = "--";
+            }
+        }
+
+        // Add log entry
+        function addLogEntry(message, isAlert = false) {
+            const currentTime = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            
+            // Create log entry element
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            
+            const timestamp = document.createElement('span');
+            timestamp.className = 'log-timestamp';
+            timestamp.textContent = `[${currentTime}] `;
+            logEntry.appendChild(timestamp);
+            
+            const messageSpan = document.createElement('span');
+            messageSpan.textContent = message;
+            
+            if (isAlert) {
+                messageSpan.className = 'log-alert';
+            }
+            
+            logEntry.appendChild(messageSpan);
+            
+            // Add to container
+            elements.logContainer.appendChild(logEntry);
+            
+            // Scroll to bottom
+            elements.logContainer.scrollTop = elements.logContainer.scrollHeight;
+            
+            // Limit the number of log entries (keep last 100)
+            while (elements.logContainer.children.length > 100) {
+                elements.logContainer.removeChild(elements.logContainer.firstChild);
+            }
+        }
+
+        // Helper functions
+        function formatDate(date) {
+            return date.toLocaleString([], {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function formatTime(date) {
+            return date.toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        // Event listeners
+        function setupEventListeners() {
+            // Power button
+            elements.powerBtn.addEventListener('click', toggleSystem);
+            
+            // Threshold sliders
+            elements.tempSlider.addEventListener('input', () => {
+                const value = parseFloat(elements.tempSlider.value);
+                appState.thresholds.temperature = value;
+                elements.tempValue.textContent = `${value.toFixed(1)} °C`;
+            });
+            
+            elements.humiditySlider.addEventListener('input', () => {
+                const value = parseFloat(elements.humiditySlider.value);
+                appState.thresholds.humidity = value;
+                elements.humidityValue.textContent = `${value.toFixed(1)} %`;
+            });
+            
+            elements.lightSlider.addEventListener('input', () => {
+                const value = parseFloat(elements.lightSlider.value);
+                appState.thresholds.light = value;
+                elements.lightValue.textContent = `${value.toFixed(1)} Lux`;
+            });
+            
+            // Forecast duration dropdown
+            elements.forecastDuration.addEventListener('change', () => {
+                appState.system.forecastMinutes = parseInt(elements.forecastDuration.value);
+            });
+            
+            // Forecast interval dropdown
+            elements.forecastInterval.addEventListener('change', () => {
+                appState.system.forecastInterval = parseInt(elements.forecastInterval.value);
+                
+                // If system is on, restart monitoring with new interval
+                if (appState.system.power) {
+                    stopMonitoring();
+                    startMonitoring();
+                }
+            });
+            
+            // Apply button
+            elements.applyBtn.addEventListener('click', () => {
+                saveSettings();
+                applySettings();
+            });
+            
+            // Restore defaults button
+            elements.restoreBtn.addEventListener('click', restoreDefaultSettings);
+        }
+
+        // Initialize app
+        function initApp() {
+            addLogEntry("Application started");
+            
+            // Load saved settings
+            loadSettings();
+            
+            // Initialize charts
+            initCharts();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Initial connection check
+            checkConnection();
+        }
+
+        // Start the app once DOM is loaded
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
