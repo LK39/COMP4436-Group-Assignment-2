@@ -1,0 +1,9 @@
+{
+  "thresholds": {
+    "Temperature": 25.0,
+    "Humidity": 60.0,
+    "Light": 500.0
+  },
+  "forecast_minutes": 30,
+  "forecast_interval": 1
+}
