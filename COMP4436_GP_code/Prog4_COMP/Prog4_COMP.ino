@@ -12,12 +12,13 @@
 WiFiClientSecure espClient;
 PubSubClient client(espClient);
 
-//const char *ssid = "samuelkar";              // Your SSID             
-//const char *password = "91237389";             // Your Wifi password
-const char *ssid = "EIA-W311MESH";              // Your SSID             
-const char *password = "42004200";             // Your Wifi password
+//const char *ssid = "EIA-W311MESH";              // Your SSID             
+//const char *password = "42004200";             // Your Wifi password
+const char *ssid = "Hi";            
+const char *password = "12345678";
+
 const char *mqtt_server = "dd28cecf47f84578948ef8d895d0d2cb.s1.eu.hivemq.cloud";
-char *mqtt_topic = "COMP4436/home/lightcontrol";
+char *mqtt_topic = "COMP4436/home/control/#";
 const char *mqtt_username = "hyuvuhjb"; 
 const char *mqtt_password = "Qweasd12"; 
 const int port=8883;
@@ -32,7 +33,7 @@ bool output = 0;
 //StaticJsonDocument<100> Jsondata; // Create a JSON document of 100 characters max before void setup_wifi()
 
 void connectToMQTTBroker(){ 
-
+    setup_wifi();
     while (!client.connected()) {
         M5.Lcd.fillScreen(GREEN); //clear the display
         M5.Lcd.setTextColor(BLACK);
@@ -112,11 +113,16 @@ void callback(char* topic, byte* payload, unsigned int length) {
   M5.Lcd.fillScreen(GREEN); //clear the display
   M5.Lcd.setTextColor(BLACK);
   M5.Lcd.setCursor(0,0);
-  M5.Lcd.println("Receive message: ");
+  M5.Lcd.println("Receive topic: ");
   M5.Lcd.setCursor(0,20);
+  M5.Lcd.println(topic);
+  M5.Lcd.setCursor(0,60);
+  M5.Lcd.println("Receive message: ");
+  M5.Lcd.setCursor(0,80);
   M5.Lcd.println(message);
   
   free(message); 
+  delay(5000);
 }
 
 void setup() {
