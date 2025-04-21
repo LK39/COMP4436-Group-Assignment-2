@@ -97,6 +97,8 @@ class AI_Prediction:
                 'field4': 'Light'
             }, inplace=True)
             
+            new_df['Light'] = new_df['Light'].div(10)
+
             return new_df
         else:
             print(f"Failed to retrieve data. Status Code: {response.status_code}, Response: {response.text}")

@@ -11,7 +11,9 @@ YOUR_CLUSTER_URL = "dd28cecf47f84578948ef8d895d0d2cb.s1.eu.hivemq.cloud"
 class MQTTClient:
     def __init__(self):
         self.subscribe_channel = "COMP4436/home/RPI4/sensors"
-        self.publish_channel = "COMP4436/home/lightcontrol"
+        self.publish_channel_light = "COMP4436/home/control/light"
+        self.publish_channel_humidity = "COMP4436/home/control/humidity"
+        self.publish_channel_air_conditioner = "COMP4436/home/control/air_conditioner"
         self.results = "light on"
         self.running = False
         self.client = None
@@ -24,11 +26,11 @@ class MQTTClient:
     def on_message(self, client, userdata, msg):
         try:
             data = json.loads(msg.payload.decode())
-            print(f"Received sensor batch:")
-            print(f"  Temp: {data['temperature']}°C")
-            print(f"  Humi: {data['humidity']}%")
-            print(f"  Sound: {data['sound']}")
-            print(f"  Light: {data['light']}")
+            # print(f"Received sensor batch:")
+            # print(f"  Temp: {data['temperature']}°C")
+            # print(f"  Humi: {data['humidity']}%")
+            # print(f"  Sound: {data['sound']}")
+            # print(f"  Light: {data['light']}")
             # You can add callback to process data here if needed
             
         except Exception as e:
@@ -46,38 +48,51 @@ class MQTTClient:
             print("* MQTT thread exiting")
     
     def start(self):
-        """Start the MQTT client in a separate thread"""
+        """Start the MQTT client using a more robust approach"""
         if self.running:
             print("* MQTT client already running")
-            return
+            return True
         
-        # Initialize client
-        self.client = paho.Client(client_id="smart_home_client", protocol=paho.MQTTv5)
+        # Initialize the client
+        client_id = f"smart_home_client_{int(time.time())}"  # Unique client ID
+        self.client = paho.Client(client_id=client_id, protocol=paho.MQTTv5)
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
-
-        self.client.tls_set(tls_version=mqtt.client.ssl.PROTOCOL_TLS)
-        self.client.username_pw_set(YOUR_USERNAME, YOUR_PASSWORD)
         
+        # Add disconnect handler
+        self.client.on_disconnect = self.on_disconnect
+        
+        # Configure reconnect behavior
+        self.client.reconnect_delay_set(min_delay=1, max_delay=30)
+        
+        # Configure TLS - try with the default settings first
         try:
-            # Connect to broker
-            print("* Connecting to MQTT broker...")
-            self.client.connect(YOUR_CLUSTER_URL, 8883)
+            print("* Configuring MQTT client with TLS...")
+            self.client.tls_set()  # Use default TLS settings
+            self.client.username_pw_set(YOUR_USERNAME, YOUR_PASSWORD)
             
-            # Set running flag
+            print("* Connecting to MQTT broker...")
+            self.client.connect_async(YOUR_CLUSTER_URL, 8883, keepalive=60)
+            
+            # Start the background thread
+            self.client.loop_start()
             self.running = True
             
-            # Start thread
-            self.thread = threading.Thread(target=self._mqtt_loop, daemon=True)
-            self.thread.start()
-            print("* MQTT client thread started")
-            
+            print("* MQTT client started and attempting connection")
             return True
+            
         except Exception as e:
             print(f"* Failed to start MQTT client: {str(e)}")
-            self.running = False
             return False
     
+    def on_disconnect(self, client, userdata, rc, properties=None):
+        """Callback for handling disconnects"""
+        if rc != 0:
+            print(f"* MQTT disconnected unexpectedly with code {rc}")
+            # The loop_start method will automatically try to reconnect
+        else:
+            print("* MQTT disconnected normally")
+        
     def stop(self):
         """Safely stop the MQTT client"""
         if not self.running:
@@ -101,7 +116,7 @@ class MQTTClient:
             
         print("* MQTT client stopped")
     
-    def publish(self, publish_channel, message):
-        self.client.publish(publish_channel, message, qos=1)
-        print(f"Trigger published: {message}\nchannels: {self.publish_channel}")
+    def publish(self,publish_channel, message,qos):
+        self.client.publish(publish_channel, message, qos)
+        print(f"Trigger published: {message}\nchannels: {publish_channel}")
  

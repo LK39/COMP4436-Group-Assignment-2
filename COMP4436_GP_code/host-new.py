@@ -1,4 +1,3 @@
-# server.py (renamed from host.py)
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from AI_Prediction import AI_Prediction
@@ -8,10 +7,22 @@ import threading
 import torch
 import atexit
 import os
+import sys
+import signal
+import time  # Add time import for timestamp
+
+# Signal handler for clean shutdown
+def signal_handler(sig, frame):
+    print("\nSignal received, shutting down...")
+    shutdown_mqtt()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
 
 # Create Flask app
 app = Flask(__name__, static_folder='static')
-CORS(app)  # Allow cross-origin requests
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # Initialize your AI model
 input_size = 3
@@ -23,8 +34,6 @@ model_path = './10_10/lstm_model_10_10.pth'
 prediction_model = AI_Prediction(input_size, hidden_size, num_layers, output_size, device, model_path)
 
 mqtt_client = MQTTClient()
-# Initialize MQTT client and start listening for messages
-mqtt_client.start()
 
 # Current state
 system_on = False
@@ -34,9 +43,9 @@ thresholds = {
     "Light": 500.0
 }
 forecast_minutes = 30
-forecast_interval = 3 # Added for frontend
-channel_id = "2924396"
-read_api_key = "XJXTKLW6V1LNWDQ6"
+forecast_interval = 3
+channel_id = "2920657"
+read_api_key = "7CPWCMSCRC5FSLZU"
 
 # Initialize device status
 device_status = {
@@ -53,10 +62,36 @@ def shutdown_mqtt():
 
 atexit.register(shutdown_mqtt)
 
-# Serve static files
+# Route definitions
 @app.route('/')
 def index():
     return send_from_directory(app.static_folder, 'index.html')
+
+@app.route('/system_health', methods=['GET'])
+def system_health():
+    mqtt_connected = False
+    if mqtt_client and mqtt_client.client:
+        try:
+            mqtt_connected = mqtt_client.client.is_connected()
+        except:
+            mqtt_connected = False
+    
+    return jsonify({
+        "status": "online",
+        "mqtt_connected": mqtt_connected,
+        "system_on": system_on,
+        "timestamp": time.time()
+    })
+
+@app.route('/mqtt_status', methods=['GET'])
+def mqtt_status():
+    if mqtt_client and mqtt_client.running and hasattr(mqtt_client.client, 'is_connected'):
+        try:
+            if mqtt_client.client.is_connected():
+                return jsonify({"status": "connected"})
+        except:
+            pass
+    return jsonify({"status": "disconnected"})
 
 @app.route('/status', methods=['GET'])
 def status():
@@ -78,10 +113,7 @@ def update_settings():
     
     return jsonify({"success": True})
 
-# On your server - add a function to turn off all appliances
 def turn_off_all_appliances():
-    """Turn off all connected appliances"""
-    # Assuming you have a dictionary or database of appliance states
     global device_status
     
     appliance_states = {
@@ -90,16 +122,12 @@ def turn_off_all_appliances():
         "moisture_absorber": "OFF"
     }
     
-    # Update the device status
     device_status = appliance_states
-    
-    # Actual code to send signals to physical devices would go here
-    # For example: send MQTT messages, call IoT APIs, etc.
-    
-    # Log the action
     print("All appliances turned off due to system shutdown")
 
-    mqtt_client.publish(mqtt_client.publish_channel, "lights off", qos=1)
+    mqtt_client.publish(mqtt_client.publish_channel_light, "lights off", qos=1)
+    mqtt_client.publish(mqtt_client.publish_channel_air_conditioner, "air_conditioner off", qos=1)
+    mqtt_client.publish(mqtt_client.publish_channel_humidity, "moisture_absorber off", qos=1)
     
     return appliance_states
 
@@ -108,19 +136,15 @@ def update_system_status():
     global system_on
     data = request.json
     
-    # Debug logging
     print(f"System status update received: {data}")
     
-    # Get system_on status
     if 'system_on' in data:
         system_on = data.get('system_on')
         print(f"System status set to: {system_on}")
     else:
         return jsonify({"error": "Invalid data format, expected {'system_on': true|false}"}), 400
     
-    # Handle turning off all appliances when system is turned off
     if not system_on and data.get('turn_off_all_appliances', False):
-        # Turn off all appliances
         appliance_states = turn_off_all_appliances()
         
         return jsonify({
@@ -129,7 +153,6 @@ def update_system_status():
             "device_status": appliance_states
         })
     
-    # Handle regular system status updates
     return jsonify({"success": True, "message": "System status updated"})
 
 @app.route('/forecast', methods=['GET'])
@@ -184,9 +207,19 @@ def get_forecast():
         
         # Send MQTT commands if needed
         if device_status["lights"] == "ON":
-            mqtt_client.publish(mqtt_client.publish_channel, "lights on", qos=1)
+            mqtt_client.publish(mqtt_client.publish_channel_light, "lights on", qos=1)
         else:
-            mqtt_client.publish(mqtt_client.publish_channel, "lights off", qos=1)
+            mqtt_client.publish(mqtt_client.publish_channel_light, "lights off", qos=1)
+        
+        if device_status["air_conditioner"] == "ON":
+            mqtt_client.publish(mqtt_client.publish_channel_air_conditioner, "air_conditioner on", qos=1)
+        else:
+            mqtt_client.publish(mqtt_client.publish_channel_air_conditioner, "air_conditioner off", qos=1)
+        
+        if device_status["moisture_absorber"] == "ON":
+            mqtt_client.publish(mqtt_client.publish_channel_humidity, "moisture_absorber on", qos=1)
+        else:
+            mqtt_client.publish(mqtt_client.publish_channel_humidity, "moisture_absorber off", qos=1)
     
     # Create human-readable messages
     status_messages = []
@@ -217,20 +250,27 @@ def get_forecast():
         "status_messages": status_messages
     })
 
+# Main execution
 if __name__ == '__main__':
     try:
         # Create static folder if it doesn't exist
         if not os.path.exists('static'):
             os.makedirs('static')
-            
-        # Create index.html in static folder (from the HTML content in your client-side code)
-        # You would normally create this file separately and place it in the static folder
+        
+        # Initialize MQTT client and start listening for messages
+        print("Starting MQTT client...")
+        success = mqtt_client.start()
+        if not success:
+            print("Warning: MQTT client failed to start, continuing without MQTT")
         
         # Start Flask app
-        app.run(host='0.0.0.0', port=5000)
+        print("Starting Flask server...")
+        app.run(host='0.0.0.0', port=5000, use_reloader=False)
     except KeyboardInterrupt:
-        # Handle Ctrl+C
         print("\nReceived keyboard interrupt. Shutting down...")
-    finally:
-        # Always ensure MQTT client is stopped
         shutdown_mqtt()
+        sys.exit(0)
+    except Exception as e:
+        print(f"\nError occurred: {e}")
+        shutdown_mqtt()
+        sys.exit(1)
