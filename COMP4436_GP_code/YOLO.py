@@ -12,8 +12,8 @@ class YOLOProcessor:
 
     def start_processing(self):
         self.active = True
-        cap = cv2.VideoCapture(0)  
-        
+        cap = cv2.VideoCapture(1)  
+
         while self.active:
             ret, frame = cap.read()
             if not ret:
@@ -26,6 +26,9 @@ class YOLOProcessor:
             # Display the frame
             cv2.imshow("YOLO Detection", frame)
 
+            # Stop processing if 'q' is pressed
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
         cap.release()
         cv2.destroyAllWindows()
@@ -57,14 +60,14 @@ class YOLOProcessor:
             cv2.rectangle(frame, (x, y), (x2, y2), color, 2)
             cv2.putText(frame, label, (x, y - 5), cv2.FONT_HERSHEY_PLAIN, 1, color, 2)
 
-        self.predictions = current_predictions  # Store
+        self.predictions = current_predictions  # Store predictions
         return frame, class_count
 
     def stop_processing(self):
-        self.active = False  # External stop
+        self.active = False  # Method to externally stop processing
 
     def get_predictions(self):
-        return self.predictions  
+        return self.predictions  # Return the predictions
 
     def get_class_count(self):
         # Return counts of each class as a dictionary
