@@ -4,7 +4,7 @@
 
 # Smart Home System: A Comprehensive IoT Implementation
 
-## - IMPORTANT
+## $${\color{red}IMPORTANT}$$
 
 
 
