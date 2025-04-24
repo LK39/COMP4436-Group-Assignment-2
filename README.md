@@ -4,6 +4,10 @@
 
 # Smart Home System: A Comprehensive IoT Implementation
 
+## <code style="color : name_color">IMPORTANT</code>
+
+
+
 ## Introduction
 
 Our project implements a sophisticated Smart Home System that integrates various sensors, data processing technologies, and notification systems to create an intelligent home environment. The system architecture combines hardware components, communication protocols, and advanced analytics to monitor and automate home functions.
