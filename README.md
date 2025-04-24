@@ -4,7 +4,7 @@
 
 # Smart Home System: A Comprehensive IoT Implementation
 
-## <code style="color : name_color">IMPORTANT</code>
+## <code style="color : red">IMPORTANT</code>
 
 
 
