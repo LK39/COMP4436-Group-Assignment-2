@@ -6,6 +6,9 @@
 
 ## $${\color{red}IMPORTANT}$$
 
+Our web interface could be accessed via this link: $${\color{red}http://158.132.154.210:5000/}$$ Our server is kept on for now and you can access it via the PolyU WiFi networks.
+Note that to turn on the system, you just need to click power and see $${\color{green}green}$$ words $${\color{green}"ON"}$$.
+![image](https://github.com/user-attachments/assets/27254c8f-5577-42ba-9c95-7a40affa78c7)
 
 
 ## Introduction
