@@ -1,0 +1,58 @@
+version: "3"
+
+services:
+
+  node-red:
+    image: nodered/node-red:latest
+    container_name: node-red
+    depends_on:
+      - mosquitto
+      - influxdb
+    volumes:
+      - ./node-red:/data
+    ports:
+      - "1880:1880"  # Node-RED UI
+    restart: unless-stopped
+    networks:
+      - iot-network
+
+  influxdb:
+    image: influxdb:2.6
+    container_name: influxdb
+    ports:
+      - "8086:8086"  # InfluxDB HTTP API
+    volumes:
+      - ./influxdb/data:/var/lib/influxdb2
+    environment:
+    # these configurations arent good for production, only for local testing
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin123
+      - DOCKER_INFLUXDB_INIT_ORG=iot
+      - DOCKER_INFLUXDB_INIT_BUCKET=iot_data
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-token
+    restart: unless-stopped
+    networks:
+      - iot-network
+
+  # Grafana for Visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"  # Grafana UI
+    volumes:
+      - ./grafana/data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    depends_on:
+      - influxdb
+    restart: unless-stopped
+    networks:
+      - iot-network
+
+# Docker Network
+networks:
+  iot-network:
+    driver: bridge
