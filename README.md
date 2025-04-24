@@ -11,7 +11,7 @@ Note that to turn on the system, you just need to click power and see $${\color{
 
 ![image](https://github.com/user-attachments/assets/27254c8f-5577-42ba-9c95-7a40affa78c7)
 
-We also have a Grafana Interface for Admin Monitoring Dashboard and AI Predictions. 
+We also have a **Grafana Interface** for Admin Monitoring Dashboard and AI Predictions. 
 
 ![image](https://github.com/user-attachments/assets/47ff5aeb-0198-4b57-b498-d4f34474c1e7)
 
